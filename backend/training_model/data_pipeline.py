@@ -13,7 +13,8 @@ def load_dataset(filepath):
 #preprocess the dataset
 def preprocessed_data(dataset):
     inputs = []
-    outputs = []
+    step_outputs = []
+    brick_outputs = []
 
     for tree_name, steps in dataset.items():
         for i in range(len(steps) - 1):
@@ -21,12 +22,12 @@ def preprocessed_data(dataset):
             next_step = steps[i+1]
             
             input_vector = encode_step(current_step)
-            output_vector = encode_step(next_step)
+            step_outputs.append(next_step['step'])
+            brick_outputs.append(encode_step(next_step)[1:])
 
             inputs.append(input_vector)
-            outputs.append(output_vector)
 
-    return np.array(inputs), np.array(outputs)
+    return np.array(inputs), np.array(step_outputs), np.array(brick_outputs)
 
 def encode_step(step):
     brick_type = int(step['brick_type'])
@@ -34,7 +35,7 @@ def encode_step(step):
     position = step['position']
     orientation = step['orientation']
     step_num = step['step']
-    return [brick_type, color, step_num] + position + orientation
+    return [step_num, brick_type, color] + position + orientation
 
 def decode_step(step):
     step_num = int(round(float(step[0])))

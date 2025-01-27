@@ -14,17 +14,43 @@ cur_step = init_step
 
 for _ in range(5):
     cur_step = cur_step.reshape(1,1,-1)
-    next_step = model.predict(cur_step)
-    generated_steps.append(next_step)
-    cur_step = next_step
+    step_output, brick_output = model.predict(cur_step)
+    print(f"Step output shape: {step_output.shape}")
+
+    if len(step_output.shape) == 1:
+        step_num = int(step_output[0])
+    elif len(step_output.shape) == 2:
+        step_num = np.argmax(step_output, axis=-1)[0]
+    else:
+        raise ValueError(f"Unexpected step_output shape: {step_output.shape}")
+
+    decoded_brick = decode_step(brick_output[0])
+    decoded_brick['step'] = step_num
+    generated_steps.append(decoded_brick)
+
+    next_input = [step_num] + list(brick_output[0])
+    cur_step = np.array(next_input, dtype=np.float32).reshape(1,1,-1)
+
+# helper func to convert numpy data types to python ints or floats
+def make_serializable(data):
+    if isinstance(data, dict):
+        return {key: make_serializable(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [make_serializable(value) for value in data]
+    elif isinstance(data, np.ndarray):
+        return data.tolist()
+    elif isinstance(data, (np.int64, np.int32)):
+        return int(data)
+    elif isinstance(data, (np.float64, np.float32)):
+        return float(data)
+    else:
+        return data
 
 print('ENCODED STEPS')
 for step in generated_steps:
     print(step)
 
+serializable_steps = make_serializable(generated_steps)
 print()
 print('DECODED STEPS TO JSON')
-decoded_steps = [decode_step(step[0]) for step in generated_steps]
-# for step in decoded_steps:
-#     print(step)
-print(json.dumps(decoded_steps, indent=4))
+print(json.dumps(serializable_steps, indent=4))

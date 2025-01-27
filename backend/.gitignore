@@ -1,3 +1,5 @@
 /venv
 /processed
 /uploads
+/generated_models
+tree_mode.keras
